@@ -432,7 +432,7 @@ else()
     if(MINGW)
         check_flags_add(C -mxsave -fno-asynchronous-unwind-tables)
     else()
-        check_both_flags_add(-fstack-protector-strong)
+        check_both_flags_add(-fstack-protector)
         if(NOT EMSCRIPTEN)
             check_both_flags_add(PREPEND -fno-stack-clash-protection)
         endif()
@@ -441,7 +441,7 @@ else()
 endif()
 
 if(CMAKE_C_FLAGS MATCHES "-O" AND NOT CMAKE_C_FLAGS MATCHES "-O0" AND NOT MINGW)
-    add_definitions(-D_FORTIFY_SOURCE=2)
+    add_definitions(-D_FORTIFY_SOURCE=1)
 endif()
 
 if(CMAKE_ASM_NASM_OBJECT_FORMAT MATCHES "win")
@@ -653,7 +653,7 @@ if(SVT_AV1_PGO)
         ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR} -DSVT_INTERNAL_PGO_GENERATE=ON -DSVT_INTERNAL_PGO_USE=OFF
         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
         --clean-first
-        --target SvtAv1EncApp
+        --target all
         COMMENT "Compiling with PGO generate"
         VERBATIM
         USES_TERMINAL
@@ -672,7 +672,7 @@ if(SVT_AV1_PGO)
         COMMAND ${PROFILE_MERGE_CMD}
         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
         --clean-first
-        --target SvtAv1EncApp
+        --target all
         COMMENT "Compiling PGO use"
         COMMAND_EXPAND_LISTS
         VERBATIM
