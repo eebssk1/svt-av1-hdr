@@ -40,7 +40,7 @@ endforeach()
 foreach(video IN LISTS videofiles)
     get_filename_component(videoname "${video}" NAME_WE)
 
-    SET(ENCODING_COMMAND ${SvtAv1EncApp} -i ${video} -b "${BUILD_DIRECTORY}/${videoname}.ivf" --preset 2 --film-grain 8 --tune 0)
+    SET(ENCODING_COMMAND ${SvtAv1EncApp} -i ${video} -b "${BUILD_DIRECTORY}/${videoname}.ivf" --preset 2 --film-grain 8 --tune 0 --enable-variance-boost 1 --variance-boost-strength 3 --variance-octile 3 --enable-qm 1 --luminance-qp-bias 12 --sharpness 2 --complex-hvs 1 --ac-bias 1.25 --tx-bias 1 --enable-tf 2 --noise-norm-strength 2 --enable-dlf 2 --qp-scale-compress-strength 2 --lookahead 96 --enable-overlays 1)
     list(JOIN ENCODING_COMMAND " " ENCODING_COMMAND_STR)
     message(
         STATUS

@@ -1,0 +1,52 @@
+name: build
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/eebssk1/bbk/debian-bookworm:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: update
+        run: apt-get -y update && apt-get -y upgrade --autoremove --purge
+      - name: load toolchain
+        run: curl -sL "https://github.com/eebssk1/aio_tc_build/releases/latest/download/x86_64-linux-gnu-native.tb2" | tar -C /opt --bz -x
+      - name: build
+        run: |
+          apt install -y yasm nasm
+          export PATH=/opt/x86_64-linux-gnu/bin:$PATH
+          export PF="$PWD/out"
+          export F="-D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -flimit-function-alignment -falign-labels=8:7:4 -falign-functions=24:18 -fmin-function-alignment=16 -ffunction-sections -fdata-sections -mtune=broadwell"
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_C_COMPILE_OPTIONS_IPO="-flto=auto -ffat-lto-objects -flto-partition=one" -DCMAKE_CXX_COMPILE_OPTIONS_IPO="-flto=auto -ffat-lto-objects -flto-partition=one"
+          make -C build -j3 RunPGO
+          make install -C build
+          PF2=$(printf '%s' "$PF" | sed 's/[\/&]/\\&/g')
+          sed -i "s/${PF2}/\${pcfiledir}\/\.\.\/\.\./g" $PF/lib/pkgconfig/SvtAv1Enc.pc
+      - name: pack
+        run: |
+          mv $PWD/out $PWD/SVT-AV1-HDR-static
+          tar --bz -cf SVT-AV1-HDR-static.tb2 -C $PWD SVT-AV1-HDR-static
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: files
+          path: "SVT-AV1-HDR-static/*"
+      - name: delete tag if exists
+        uses: ClementTsang/delete-tag-and-release@v0.4.0
+        continue-on-error: true
+        with:
+          delete_release: true
+          tag_name: nightly
+      - name: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "*.tb2"
+          commit: master
+          makeLatest: true
+          tag: nightly
