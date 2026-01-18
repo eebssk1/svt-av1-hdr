@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: ["master"]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -47,6 +47,6 @@ jobs:
         with:
           allowUpdates: true
           artifacts: "*.tb2"
-          commit: master
+          commit: main
           makeLatest: true
           tag: nightly
