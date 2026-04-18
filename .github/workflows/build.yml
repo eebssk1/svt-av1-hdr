@@ -21,8 +21,8 @@ jobs:
           apt install -y yasm nasm
           export PATH=/opt/x86_64-linux-gnu/bin:$PATH
           export PF="$PWD/out"
-          export F="-D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -flimit-function-alignment -falign-loops=8:5:2 -falign-jumps=8:5:2 -falign-functions=24 -fmin-function-alignment=8 -ffunction-sections -fdata-sections -mtune=broadwell"
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_C_COMPILE_OPTIONS_IPO="-flto=auto -ffat-lto-objects -flto-partition=one" -DCMAKE_CXX_COMPILE_OPTIONS_IPO="-flto=auto -ffat-lto-objects -flto-partition=one"
+          export F="-D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -flimit-function-alignment -falign-loops=8:5:2 -falign-jumps=8:5:2 -falign-functions=24 -fmin-function-alignment=8 -ffunction-sections -fdata-sections -march=broadwell -mtune=broadwell"
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_USER_MAKE_RULES_OVERRIDE="$PWD/Build/fix_lto.cmake"
           make -C build -j3 RunPGO
           make install -C build
           PF2=$(printf '%s' "$PF" | sed 's/[\/&]/\\&/g')
