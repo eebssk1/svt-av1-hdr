@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-x86:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/eebssk1/bbk/debian-bookworm:latest
+      image: ghcr.io/eebssk1/debian-trixie:latest
     steps:
       - uses: actions/checkout@v2
       - name: update
@@ -30,7 +30,52 @@ jobs:
       - name: pack
         run: |
           mv $PWD/out $PWD/SVT-AV1-HDR-static
-          tar --bz -cf SVT-AV1-HDR-static.tb2 -C $PWD SVT-AV1-HDR-static
+          tar --bz -cf SVT-AV1-HDR-static-x86.tb2 -C $PWD SVT-AV1-HDR-static
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: files
+          path: "SVT-AV1-HDR-static/*"
+      - name: delete tag if exists
+        uses: ClementTsang/delete-tag-and-release@v0.4.0
+        continue-on-error: true
+        with:
+          delete_release: true
+          tag_name: nightly
+      - name: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "*.tb2"
+          commit: main
+          makeLatest: true
+          tag: nightly
+
+  build-a64:
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: ghcr.io/eebssk1/debian-trixie:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: update
+        run: apt-get -y update && apt-get -y upgrade --autoremove --purge
+      - name: load toolchain
+        run: curl -sL "https://github.com/eebssk1/aio_tc_build/releases/latest/download/aarch64-linux-gnu-native.tb2" | tar -C /opt --bz -x
+      - name: build
+        run: |
+          apt install -y yasm nasm
+          export PATH=/opt/aarch64-linux-gnu/bin:$PATH
+          export PF="$PWD/out"
+          export F="-D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -flimit-function-alignment -falign-loops=8:5:2 -falign-jumps=8:5:2 -falign-functions=24 -fmin-function-alignment=8 -ffunction-sections -fdata-sections"
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_USER_MAKE_RULES_OVERRIDE="$PWD/Build/fix_lto.cmake"
+          make -C build -j3 RunPGO
+          make install -C build
+          PF2=$(printf '%s' "$PF" | sed 's/[\/&]/\\&/g')
+          sed -i "s/${PF2}/\${pcfiledir}\/\.\.\/\.\./g" $PF/lib/pkgconfig/SvtAv1Enc.pc
+      - name: pack
+        run: |
+          mv $PWD/out $PWD/SVT-AV1-HDR-static
+          tar --bz -cf SVT-AV1-HDR-static-a64.tb2 -C $PWD SVT-AV1-HDR-static
       - name: upload
         uses: actions/upload-artifact@v4
         with:
