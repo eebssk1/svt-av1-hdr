@@ -12,17 +12,29 @@ jobs:
       image: ghcr.io/eebssk1/debian-trixie:latest
     steps:
       - uses: actions/checkout@v2
-      - name: update
-        run: apt-get -y update && apt-get -y upgrade --autoremove --purge
+      - name: updateNinstall
+        run: |
+          apt-get -y update && apt-get -y upgrade --autoremove --purge
+          apt-get -y install ffmpeg curl
       - name: load toolchain
         run: curl -sL "https://github.com/eebssk1/aio_tc_build/releases/latest/download/x86_64-linux-gnu-native.tb2" | tar -C /opt --bz -x
+      - name: get and convert video
+        shell: bash
+        run: |
+          for i in {0..2}; do
+            curl -f -L -s "https://github.com/Akatmks/build-svt-av1/raw/refs/heads/FoodMarket2/PGO.mkv.${i}" >> PGO.mkv || { echo "Failed at file $i"; exit 255; }
+          done
+          ffmpeg -i PGO.mkv -strict -1 -f yuv4mpegpipe -pix_fmt yuv420p10le PGO.y4m
+          rm -f PGO.mkv
+          mkdir PGO
+          mv PGO.y4m PGO/
       - name: build
         run: |
           apt install -y yasm nasm
           export PATH=/opt/x86_64-linux-gnu/bin:$PATH
           export PF="$PWD/out"
           export F="-Wa,-O2 -D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -flimit-function-alignment -falign-loops=32:16:16:11 -falign-jumps=32:16:16:11 -falign-functions=32:18:16:12 -fmin-function-alignment=8 -ffunction-sections -fdata-sections -march=broadwell -mtune=broadwell"
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_USER_MAKE_RULES_OVERRIDE="$PWD/Build/fix_lto.cmake"
+          cmake -B build -DSVT_AV1_PGO_CUSTOM_VIDEOS="$PWD/PGO/" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_USER_MAKE_RULES_OVERRIDE="$PWD/Build/fix_lto.cmake"
           make -C build -j3 RunPGO
           make install -C build
           PF2=$(printf '%s' "$PF" | sed 's/[\/&]/\\&/g')
@@ -57,17 +69,29 @@ jobs:
       image: ghcr.io/eebssk1/debian-trixie:latest
     steps:
       - uses: actions/checkout@v2
-      - name: update
-        run: apt-get -y update && apt-get -y upgrade --autoremove --purge
+      - name: updateNinstall
+        run: |
+          apt-get -y update && apt-get -y upgrade --autoremove --purge
+          apt-get -y install ffmpeg curl
       - name: load toolchain
         run: curl -sL "https://github.com/eebssk1/aio_tc_build/releases/latest/download/aarch64-linux-gnu-native.tb2" | tar -C /opt --bz -x
+      - name: get and convert video
+        shell: bash
+        run: |
+          for i in {0..2}; do
+            curl -f -L -s "https://github.com/Akatmks/build-svt-av1/raw/refs/heads/FoodMarket2/PGO.mkv.${i}" >> PGO.mkv || { echo "Failed at file $i"; exit 255; }
+          done
+          ffmpeg -i PGO.mkv -strict -1 -f yuv4mpegpipe -pix_fmt yuv420p10le PGO.y4m
+          rm -f PGO.mkv
+          mkdir PGO
+          mv PGO.y4m PGO/
       - name: build
         run: |
           apt install -y yasm nasm
           export PATH=/opt/aarch64-linux-gnu/bin:$PATH
           export PF="$PWD/out"
           export F="-D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -flimit-function-alignment -falign-loops=32:14:16:12 -falign-jumps=32:14:16:12 -falign-functions=32:16:16:12 -fmin-function-alignment=8 -ffunction-sections -fdata-sections"
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_USER_MAKE_RULES_OVERRIDE="$PWD/Build/fix_lto.cmake"
+          cmake -B build -DSVT_AV1_PGO_CUSTOM_VIDEOS="$PWD/PGO/" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_USER_MAKE_RULES_OVERRIDE="$PWD/Build/fix_lto.cmake"
           make -C build -j3 RunPGO
           make install -C build
           PF2=$(printf '%s' "$PF" | sed 's/[\/&]/\\&/g')
