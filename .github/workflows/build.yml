@@ -33,7 +33,7 @@ jobs:
           apt install -y yasm nasm
           export PATH=/opt/x86_64-linux-gnu/bin:$PATH
           export PF="$PWD/out"
-          export F="-O3 -Wa,-O2 -D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -fno-math-errno -flimit-function-alignment -falign-loops=32:16:16:11 -falign-jumps=32:16:16:11 -falign-functions=32:18:16:12 -fmin-function-alignment=8 -ffunction-sections -fdata-sections -march=broadwell -mtune=broadwell"
+          export F="-O3 -Wa,-O2 -D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -fno-math-errno -march=broadwell -mtune=broadwell -flimit-function-alignment -falign-loops=32:16:16:11 -falign-jumps=32:16:16:11 -falign-functions=32:18:16:12 -fmin-function-alignment=8 -ffunction-sections -fdata-sections"
           cmake -B build -DSVT_AV1_PGO_CUSTOM_VIDEOS="$PWD/PGO/" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_USER_MAKE_RULES_OVERRIDE="$PWD/Build/fix_lto.cmake"
           make -C build -j3 RunPGO
           make install -C build
@@ -90,7 +90,7 @@ jobs:
           apt install -y yasm nasm
           export PATH=/opt/aarch64-linux-gnu/bin:$PATH
           export PF="$PWD/out"
-          export F="-D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -fno-math-errno -flimit-function-alignment -falign-loops=32:14:16:12 -falign-jumps=32:14:16:12 -falign-functions=32:16:16:12 -fmin-function-alignment=8 -ffunction-sections -fdata-sections"
+          export F="-O3 -D__1ENABLE_AGGRESSIVE_GRAPHITE9__ -funsafe-math-optimizations -fno-math-errno -march=armv8.2-a+dotprod -mtune=cortex-a76.cortex-a55 -flimit-function-alignment -falign-loops=32:14:16:12 -falign-jumps=32:14:16:12 -falign-functions=32:16:16:12 -fmin-function-alignment=8 -ffunction-sections -fdata-sections"
           cmake -B build -DSVT_AV1_PGO_CUSTOM_VIDEOS="$PWD/PGO/" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PF" -DSVT_AV1_LTO=on -DSVT_AV1_PGO=on -DBUILD_SHARED_LIBS=off -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DCMAKE_C_FLAGS="$F" -DCMAKE_CXX_FLAGS="$F" -DCMAKE_USER_MAKE_RULES_OVERRIDE="$PWD/Build/fix_lto.cmake"
           make -C build -j3 RunPGO
           make install -C build
