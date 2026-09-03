@@ -701,6 +701,15 @@ add_subdirectory(Source/Lib)
 if(BUILD_APPS)
     add_subdirectory(Source/App)
 endif()
+
+set(TCPU NULL)
+if(HAVE_ARM_PLATFORM)
+set(TCPU ARM)
+endif()
+if(HAVE_X86_PLATFORM)
+set(TCPU X86)
+endif()
+
 if(SVT_AV1_PGO)
     string(REPLACE ";" "::" SVT_AV1_PGO_CUSTOM_VIDEOS "${SVT_AV1_PGO_CUSTOM_VIDEOS}")
 
@@ -735,8 +744,9 @@ if(SVT_AV1_PGO)
     )
 
     if(SVT_AV1_PGO_CUSTOM_VIDEOS)
-        add_custom_target(PGOGenerateProfile ${CMAKE_COMMAND} -P
-            ${PROJECT_SOURCE_DIR}/Build/pgohelper.cmake
+        add_custom_target(PGOGenerateProfile ${CMAKE_COMMAND}
+            -DTCPU=${TCPU}
+            -P ${PROJECT_SOURCE_DIR}/Build/pgohelper.cmake
             ${CMAKE_BINARY_DIR}
             ${SVT_AV1_PGO_CUSTOM_VIDEOS}
             $<TARGET_FILE:SvtAv1EncApp>
@@ -752,8 +762,9 @@ if(SVT_AV1_PGO)
             VERBATIM
             USES_TERMINAL
         )
-        add_custom_target(PGOGenerateProfile ${CMAKE_COMMAND} -P
-            ${PROJECT_SOURCE_DIR}/Build/pgohelper.cmake
+        add_custom_target(PGOGenerateProfile ${CMAKE_COMMAND}
+            -DTCPU=${TCPU}
+            -P ${PROJECT_SOURCE_DIR}/Build/pgohelper.cmake
             ${CMAKE_BINARY_DIR}
             ${CMAKE_BINARY_DIR}/objective-1-fast
             $<TARGET_FILE:SvtAv1EncApp>

@@ -37,10 +37,18 @@ foreach(dir IN LISTS VIDEO_DIRECTORY)
     list(APPEND videofiles ${videofile})
 endforeach()
 
+set(CPUARG "")
+if(TCPU MATCHES X86)
+set(CPUARG "--asm 9")
+endif()
+if(TCPU MATCHES ARM)
+set(CPUARG "--asm 3")
+endif()
+
 foreach(video IN LISTS videofiles)
     get_filename_component(videoname "${video}" NAME_WE)
 
-    SET(ENCODING_COMMAND ${SvtAv1EncApp} -i ${video} -b "${BUILD_DIRECTORY}/${videoname}.ivf" --preset 2 --film-grain 8 --tune 0 --variance-boost-strength 3 --variance-octile 3 --luminance-qp-bias 12 --complex-hvs 1 --ac-bias 1.2 --tx-bias 1 --enable-tf 2 --noise-norm-strength 2 --enable-dlf 2 --qp-scale-compress-strength 1.5 --enable-overlays 1 --qm-min 7 --qm-max 12 --tile-rows 1 --tile-columns 1)
+    SET(ENCODING_COMMAND ${SvtAv1EncApp} ${CPUARG} -i ${video} -b "${BUILD_DIRECTORY}/${videoname}.ivf" --preset 2 --film-grain 8 --tune 0 --variance-boost-strength 3 --variance-octile 3 --luminance-qp-bias 12 --complex-hvs 1 --ac-bias 1.2 --tx-bias 1 --enable-tf 2 --noise-norm-strength 2 --enable-dlf 2 --qp-scale-compress-strength 1.5 --enable-overlays 1 --qm-min 7 --qm-max 12 --tile-rows 1 --tile-columns 1)
     list(JOIN ENCODING_COMMAND " " ENCODING_COMMAND_STR)
     message(
         STATUS
