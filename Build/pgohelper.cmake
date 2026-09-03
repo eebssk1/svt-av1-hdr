@@ -1,16 +1,31 @@
 #!/usr/bin/cmake -P
 # cmake -P Build/pgohelper.cmake $PWD/Build $PWD/objective-2-fast::$PWD/objective-1-fast $PWD/Bin/Release/SvtAv1EncApp
 
-if(CMAKE_ARGC LESS 6)
+# The positional arguments are read relative to the "-P" marker on the command
+# line so that extra options passed before "-P" (e.g. -DTCPU=...) do not shift
+# their indexes.
+set(PGO_P_INDEX -1)
+foreach(i RANGE 0 ${CMAKE_ARGC})
+    set(PGO_ARG "CMAKE_ARGV${i}")
+    if(DEFINED ${PGO_ARG} AND "${${PGO_ARG}}" STREQUAL "-P")
+        set(PGO_P_INDEX ${i})
+    endif()
+endforeach()
+
+math(EXPR PGO_BUILD_INDEX "${PGO_P_INDEX} + 2")
+math(EXPR PGO_VIDEO_INDEX "${PGO_P_INDEX} + 3")
+math(EXPR PGO_APP_INDEX "${PGO_P_INDEX} + 4")
+
+if(NOT PGO_P_INDEX GREATER -1 OR NOT CMAKE_ARGC GREATER PGO_APP_INDEX)
     message(
         FATAL_ERROR
-            "Usage: cmake -P ${CMAKE_ARGV2} build_dir /path/to/videofiles::additional_paths /path/to/SvtAv1EncApp"
+            "Usage: cmake [options] -P pgohelper.cmake build_dir /path/to/videofiles::additional_paths /path/to/SvtAv1EncApp"
     )
 endif()
 
-set(BUILD_DIRECTORY "${CMAKE_ARGV3}")
-set(VIDEO_DIRECTORY "${CMAKE_ARGV4}")
-set(SvtAv1EncApp "${CMAKE_ARGV5}")
+set(BUILD_DIRECTORY "${CMAKE_ARGV${PGO_BUILD_INDEX}}")
+set(VIDEO_DIRECTORY "${CMAKE_ARGV${PGO_VIDEO_INDEX}}")
+set(SvtAv1EncApp "${CMAKE_ARGV${PGO_APP_INDEX}}")
 
 if(NOT EXISTS ${SvtAv1EncApp})
     message(
@@ -37,12 +52,19 @@ foreach(dir IN LISTS VIDEO_DIRECTORY)
     list(APPEND videofiles ${videofile})
 endforeach()
 
-set(CPUARG "")
+if(NOT videofiles)
+    message(
+        FATAL_ERROR
+            "No y4m videos found in ${VIDEO_DIRECTORY}. Cannot generate a PGO profile."
+    )
+endif()
+
+set(CPUARG)
 if(TCPU MATCHES X86)
-set(CPUARG "--asm 9")
+set(CPUARG "--asm" "9")
 endif()
 if(TCPU MATCHES ARM)
-set(CPUARG "--asm 3")
+set(CPUARG "--asm" "3")
 endif()
 
 foreach(video IN LISTS videofiles)
@@ -54,5 +76,14 @@ foreach(video IN LISTS videofiles)
         STATUS
             "Running ${ENCODING_COMMAND_STR}"
     )
-    execute_process(COMMAND ${ENCODING_COMMAND})
+    execute_process(
+        COMMAND ${ENCODING_COMMAND}
+        RESULT_VARIABLE ENCODE_RESULT
+    )
+    if(NOT ENCODE_RESULT EQUAL 0)
+        message(
+            FATAL_ERROR
+                "PGO encoding failed for ${video} with exit code ${ENCODE_RESULT}"
+        )
+    endif()
 endforeach()
