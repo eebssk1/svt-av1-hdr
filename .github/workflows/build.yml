@@ -12,6 +12,8 @@ jobs:
       image: ghcr.io/eebssk1/debian-trixie:latest
     steps:
       - uses: actions/checkout@v2
+      - name: disable git check
+        run: git config --global safe.directory '*'
       - name: updateNinstall
         run: |
           apt-get -y update && apt-get -y upgrade --autoremove --purge
@@ -74,6 +76,8 @@ jobs:
       image: ghcr.io/eebssk1/debian-trixie:latest
     steps:
       - uses: actions/checkout@v2
+      - name: disable git check
+        run: git config --global safe.directory '*'
       - name: updateNinstall
         run: |
           apt-get -y update && apt-get -y upgrade --autoremove --purge
